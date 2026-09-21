@@ -12,6 +12,8 @@ import {
   BookOpen,
   DoorOpen,
   Archive,
+  Box,
+  Layers,
   MapPin,
   Package,
   Plus,
@@ -43,7 +45,9 @@ const ROOM_ICON_MAP: Record<string, React.ElementType> = {
   Utensils,
   BookOpen,
   DoorOpen,
-  Archive
+  Archive,
+  Box,
+  Layers
 };
 
 export const SpaceExplorerView: React.FC<SpaceExplorerViewProps> = ({

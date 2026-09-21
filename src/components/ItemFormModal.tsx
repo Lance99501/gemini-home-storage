@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { InventoryItem, RoomDefinition, ItemStatus, ItemFrequency } from '../types';
-import { CATEGORIES, STATUS_CONFIG } from '../data/defaultData';
+import { InventoryItem, RoomDefinition, CategoryDefinition, ItemStatus, ItemFrequency } from '../types';
+import { CATEGORIES as DEFAULT_CATEGORIES, STATUS_CONFIG } from '../data/defaultData';
 import { X, MapPin, Check, Plus, Tag } from 'lucide-react';
 
 interface ItemFormModalProps {
@@ -9,6 +9,7 @@ interface ItemFormModalProps {
   onSave: (item: Partial<InventoryItem>) => void;
   itemToEdit: InventoryItem | null;
   rooms: RoomDefinition[];
+  categories?: CategoryDefinition[];
   initialLocation?: { room: string; furniture: string; spot: string };
 }
 
@@ -18,10 +19,11 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
   onSave,
   itemToEdit,
   rooms,
+  categories = DEFAULT_CATEGORIES,
   initialLocation
 }) => {
   const [name, setName] = useState('');
-  const [category, setCategory] = useState(CATEGORIES[0].name);
+  const [category, setCategory] = useState(categories[0]?.name || '日常備品');
   const [quantity, setQuantity] = useState(1);
   const [unit, setUnit] = useState('個');
   const [room, setRoom] = useState(rooms[0]?.name || '客廳');
@@ -52,7 +54,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
       setReviewDate(itemToEdit.reviewDate || '');
     } else {
       setName('');
-      setCategory(CATEGORIES[0].name);
+      setCategory(categories[0]?.name || '日常備品');
       setQuantity(1);
       setUnit('個');
       setRoom(initialLocation?.room || rooms[0]?.name || '客廳');
@@ -164,7 +166,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500"
               >
-                {CATEGORIES.map((c) => (
+                {categories.map((c) => (
                   <option key={c.id} value={c.name}>
                     {c.name}
                   </option>

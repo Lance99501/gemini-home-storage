@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { InventoryItem, RoomDefinition } from '../types';
-import { CATEGORIES } from '../data/defaultData';
+import { InventoryItem, RoomDefinition, CategoryDefinition } from '../types';
+import { CATEGORIES as DEFAULT_CATEGORIES } from '../data/defaultData';
 import { DeclutterProgressDashboard } from './DeclutterProgressDashboard';
 import {
   Sparkles,
@@ -20,6 +20,7 @@ import {
 interface DeclutterWorkbenchProps {
   items: InventoryItem[];
   rooms: RoomDefinition[];
+  categories?: CategoryDefinition[];
   onUpdateItem: (item: InventoryItem) => void;
   onBatchAddClutter: (names: string[], sourceRoom: string, sourceSpot: string) => void;
   onDeleteItem: (id: string) => void;
@@ -29,6 +30,7 @@ interface DeclutterWorkbenchProps {
 export const DeclutterWorkbench: React.FC<DeclutterWorkbenchProps> = ({
   items,
   rooms,
+  categories = DEFAULT_CATEGORIES,
   onUpdateItem,
   onBatchAddClutter,
   onDeleteItem,
@@ -49,7 +51,7 @@ export const DeclutterWorkbench: React.FC<DeclutterWorkbenchProps> = ({
   const [targetRoom, setTargetRoom] = useState(rooms[0]?.name || '客廳');
   const [targetFurniture, setTargetFurniture] = useState('');
   const [targetSpot, setTargetSpot] = useState('');
-  const [targetCategory, setTargetCategory] = useState(CATEGORIES[0].name);
+  const [targetCategory, setTargetCategory] = useState(categories[0]?.name || '日常備品');
   const [targetFrequency, setTargetFrequency] = useState<'daily' | 'weekly' | 'seasonal' | 'rarely'>('weekly');
   const [tagInput, setTagInput] = useState('');
 
@@ -463,7 +465,7 @@ export const DeclutterWorkbench: React.FC<DeclutterWorkbenchProps> = ({
                             onChange={(e) => setTargetCategory(e.target.value)}
                             className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500"
                           >
-                            {CATEGORIES.map((c) => (
+                            {categories.map((c) => (
                               <option key={c.id} value={c.name}>
                                 {c.name}
                               </option>

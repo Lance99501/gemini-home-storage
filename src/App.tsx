@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { InventoryItem, RoomDefinition, FilterState, ActiveTab, ItemStatus } from './types';
+import { InventoryItem, RoomDefinition, CategoryDefinition, FilterState, ActiveTab, ItemStatus } from './types';
 import {
   loadStoredItems,
   saveStoredItems,
   loadStoredRooms,
   saveStoredRooms,
+  loadStoredCategories,
+  saveStoredCategories,
   exportDataAsJson,
   resetToDefaults
 } from './utils/storage';
@@ -13,12 +15,14 @@ import { StatsBar } from './components/StatsBar';
 import { DeclutterWorkbench } from './components/DeclutterWorkbench';
 import { ItemListView } from './components/ItemListView';
 import { SpaceExplorerView } from './components/SpaceExplorerView';
+import { SpaceCategoryManager } from './components/SpaceCategoryManager';
 import { ItemFormModal } from './components/ItemFormModal';
 import { PrintLabelModal } from './components/PrintLabelModal';
 
 export default function App() {
   const [items, setItems] = useState<InventoryItem[]>(() => loadStoredItems());
   const [rooms, setRooms] = useState<RoomDefinition[]>(() => loadStoredRooms());
+  const [categories, setCategories] = useState<CategoryDefinition[]>(() => loadStoredCategories());
   const [activeTab, setActiveTab] = useState<ActiveTab>('declutter');
 
   const [filterState, setFilterState] = useState<FilterState>({
@@ -45,6 +49,11 @@ export default function App() {
   useEffect(() => {
     saveStoredRooms(rooms);
   }, [rooms]);
+
+  // Persist categories whenever changed
+  useEffect(() => {
+    saveStoredCategories(categories);
+  }, [categories]);
 
   // Handler: Add or Edit Item
   const handleSaveItem = (itemData: Partial<InventoryItem>) => {
@@ -148,9 +157,65 @@ export default function App() {
     setActiveTab('inventory');
   };
 
+  // Cascade updates when Room is renamed
+  const handleRenameRoomCascade = (oldRoomName: string, newRoomName: string) => {
+    setItems(prev =>
+      prev.map(item => {
+        if (item.location.room === oldRoomName) {
+          return {
+            ...item,
+            location: {
+              ...item.location,
+              room: newRoomName
+            },
+            updatedAt: Date.now()
+          };
+        }
+        return item;
+      })
+    );
+  };
+
+  // Cascade updates when Room is deleted
+  const handleDeleteRoomCascade = (deletedRoomName: string) => {
+    setItems(prev =>
+      prev.map(item => {
+        if (item.location.room === deletedRoomName) {
+          return {
+            ...item,
+            status: 'clutter_pending',
+            location: {
+              room: '待整理區',
+              furniture: '待定位家具',
+              spot: '原' + deletedRoomName
+            },
+            updatedAt: Date.now()
+          };
+        }
+        return item;
+      })
+    );
+  };
+
+  // Cascade updates when Category is renamed
+  const handleRenameCategoryCascade = (oldCatName: string, newCatName: string) => {
+    setItems(prev =>
+      prev.map(item => {
+        if (item.category === oldCatName) {
+          return {
+            ...item,
+            category: newCatName,
+            updatedAt: Date.now()
+          };
+        }
+        return item;
+      })
+    );
+  };
+
   // Handler: Export Backup
   const handleExport = () => {
-    exportDataAsJson(items, rooms);
+    exportDataAsJson(items, rooms, categories);
   };
 
   // Handler: Import Backup
@@ -166,6 +231,9 @@ export default function App() {
           setItems(parsed.items);
           if (Array.isArray(parsed.rooms)) {
             setRooms(parsed.rooms);
+          }
+          if (Array.isArray(parsed.categories)) {
+            setCategories(parsed.categories);
           }
           alert('資料備份已成功還原！');
         } else {
@@ -184,6 +252,7 @@ export default function App() {
     const data = resetToDefaults();
     setItems(data.items);
     setRooms(data.rooms);
+    setCategories(data.categories);
     setFilterState({
       searchQuery: '',
       room: '',
@@ -230,6 +299,7 @@ export default function App() {
           <DeclutterWorkbench
             items={items}
             rooms={rooms}
+            categories={categories}
             onUpdateItem={handleUpdateItem}
             onBatchAddClutter={handleBatchAddClutter}
             onDeleteItem={handleDeleteItem}
@@ -241,6 +311,7 @@ export default function App() {
           <ItemListView
             items={items}
             rooms={rooms}
+            categories={categories}
             filterState={filterState}
             onFilterChange={(patch) => setFilterState(prev => ({ ...prev, ...patch }))}
             onEditItem={handleEditItem}
@@ -266,6 +337,19 @@ export default function App() {
             }}
           />
         )}
+
+        {activeTab === 'management' && (
+          <SpaceCategoryManager
+            rooms={rooms}
+            categories={categories}
+            items={items}
+            onUpdateRooms={setRooms}
+            onUpdateCategories={setCategories}
+            onRenameRoomCascade={handleRenameRoomCascade}
+            onRenameCategoryCascade={handleRenameCategoryCascade}
+            onDeleteRoomCascade={handleDeleteRoomCascade}
+          />
+        )}
       </main>
 
       {/* Modals */}
@@ -275,6 +359,7 @@ export default function App() {
         onSave={handleSaveItem}
         itemToEdit={itemToEdit}
         rooms={rooms}
+        categories={categories}
         initialLocation={initialLocation}
       />
 

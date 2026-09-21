@@ -32,6 +32,13 @@ export interface RoomDefinition {
   defaultFurnitures: string[];
 }
 
+export interface CategoryDefinition {
+  id: string;
+  name: string;
+  color: string;
+  description?: string;
+}
+
 export interface FilterState {
   searchQuery: string;
   room: string;
@@ -40,4 +47,4 @@ export interface FilterState {
   tag: string;
 }
 
-export type ActiveTab = 'inventory' | 'declutter' | 'spaces';
+export type ActiveTab = 'inventory' | 'declutter' | 'spaces' | 'management';

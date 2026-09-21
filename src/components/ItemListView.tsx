@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { InventoryItem, RoomDefinition, FilterState } from '../types';
-import { CATEGORIES, STATUS_CONFIG } from '../data/defaultData';
+import { InventoryItem, RoomDefinition, CategoryDefinition, FilterState } from '../types';
+import { CATEGORIES as DEFAULT_CATEGORIES, STATUS_CONFIG } from '../data/defaultData';
 import {
   Search,
   Filter,
@@ -19,6 +19,7 @@ import {
 interface ItemListViewProps {
   items: InventoryItem[];
   rooms: RoomDefinition[];
+  categories?: CategoryDefinition[];
   filterState: FilterState;
   onFilterChange: (newFilter: Partial<FilterState>) => void;
   onEditItem: (item: InventoryItem) => void;
@@ -30,6 +31,7 @@ interface ItemListViewProps {
 export const ItemListView: React.FC<ItemListViewProps> = ({
   items,
   rooms,
+  categories = DEFAULT_CATEGORIES,
   filterState,
   onFilterChange,
   onEditItem,
@@ -198,7 +200,7 @@ export const ItemListView: React.FC<ItemListViewProps> = ({
               className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
             >
               <option value="">所有分類</option>
-              {CATEGORIES.map((c) => (
+              {categories.map((c) => (
                 <option key={c.id} value={c.name}>
                   {c.name}
                 </option>

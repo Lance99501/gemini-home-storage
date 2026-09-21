@@ -10,7 +10,8 @@ import {
   Download,
   Upload,
   RotateCcw,
-  MoreHorizontal
+  MoreHorizontal,
+  Settings2
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -104,6 +105,19 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <MapPin className={`w-3.5 h-3.5 ${activeTab === 'spaces' ? 'text-blue-600' : 'text-slate-400'}`} />
               空間收納地圖
+            </button>
+
+            <button
+              id="nav-tab-management"
+              onClick={() => onTabChange('management')}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === 'management'
+                  ? 'bg-white text-indigo-700 shadow-2xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Settings2 className={`w-3.5 h-3.5 ${activeTab === 'management' ? 'text-indigo-600' : 'text-slate-400'}`} />
+              空間與分類管理
             </button>
           </div>
 

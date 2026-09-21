@@ -1,4 +1,4 @@
-import { InventoryItem, RoomDefinition } from '../types';
+import { InventoryItem, RoomDefinition, CategoryDefinition } from '../types';
 
 export const DEFAULT_ROOMS: RoomDefinition[] = [
   {
