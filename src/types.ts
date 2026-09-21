@@ -45,6 +45,7 @@ export interface FilterState {
   category: string;
   status: string;
   tag: string;
+  expiryFilter?: 'all' | 'expired' | 'expiring_soon';
 }
 
 export type ActiveTab = 'inventory' | 'declutter' | 'spaces' | 'management';

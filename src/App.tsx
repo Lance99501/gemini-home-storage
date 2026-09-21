@@ -258,8 +258,16 @@ export default function App() {
       room: '',
       category: '',
       status: '',
-      tag: ''
+      tag: '',
+      expiryFilter: undefined
     });
+  };
+
+  const handleFilterExpiringItems = (filterType: 'expired' | 'expiring_soon' | 'all') => {
+    setFilterState(prev => ({
+      ...prev,
+      expiryFilter: filterType === 'all' ? undefined : filterType
+    }));
   };
 
   const clutterCount = items.filter(i => i.status === 'clutter_pending').length;
@@ -283,6 +291,9 @@ export default function App() {
         onImport={handleImport}
         onReset={handleReset}
         clutterCount={clutterCount}
+        items={items}
+        onFilterExpiringItems={handleFilterExpiringItems}
+        onQuickStatusChange={handleQuickStatusChange}
       />
 
       {/* Main Container */}

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { InventoryItem, RoomDefinition, CategoryDefinition, ItemStatus, ItemFrequency } from '../types';
 import { CATEGORIES as DEFAULT_CATEGORIES, STATUS_CONFIG } from '../data/defaultData';
-import { X, MapPin, Check, Plus, Tag } from 'lucide-react';
+import { getDaysDifference } from '../utils/expiration';
+import { X, MapPin, Check, Plus, Tag, AlertTriangle, Clock } from 'lucide-react';
 
 interface ItemFormModalProps {
   isOpen: boolean;
@@ -368,6 +369,38 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                 onChange={(e) => setExpiresAt(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500"
               />
+              {expiresAt && (() => {
+                const diff = getDaysDifference(expiresAt);
+                if (diff === null) return null;
+                if (diff < 0) {
+                  return (
+                    <div className="flex items-center gap-1 text-[11px] text-rose-600 font-semibold mt-1">
+                      <AlertTriangle className="w-3 h-3" />
+                      此物品已過期 {Math.abs(diff)} 天
+                    </div>
+                  );
+                } else if (diff === 0) {
+                  return (
+                    <div className="flex items-center gap-1 text-[11px] text-rose-600 font-bold mt-1">
+                      <AlertTriangle className="w-3 h-3" />
+                      今天即將到期！
+                    </div>
+                  );
+                } else if (diff <= 30) {
+                  return (
+                    <div className="flex items-center gap-1 text-[11px] text-amber-600 font-semibold mt-1">
+                      <Clock className="w-3 h-3" />
+                      即將到期：剩餘 {diff} 天
+                    </div>
+                  );
+                } else {
+                  return (
+                    <div className="text-[11px] text-slate-500 mt-1">
+                      安全效期：尚餘 {diff} 天
+                    </div>
+                  );
+                }
+              })()}
             </div>
 
             {status === 'later_box' && (
@@ -382,6 +415,24 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                   onChange={(e) => setReviewDate(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500"
                 />
+                {reviewDate && (() => {
+                  const diff = getDaysDifference(reviewDate);
+                  if (diff === null) return null;
+                  if (diff <= 0) {
+                    return (
+                      <div className="flex items-center gap-1 text-[11px] text-rose-600 font-semibold mt-1">
+                        <AlertTriangle className="w-3 h-3" />
+                        已達檢驗期限！應立即決定去留
+                      </div>
+                    );
+                  } else {
+                    return (
+                      <div className="text-[11px] text-slate-500 mt-1">
+                        距檢驗期限尚餘 {diff} 天
+                      </div>
+                    );
+                  }
+                })()}
               </div>
             )}
           </div>

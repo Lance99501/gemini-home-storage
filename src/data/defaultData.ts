@@ -125,7 +125,7 @@ export const INITIAL_ITEMS: InventoryItem[] = [
     frequency: 'monthly' as any,
     tags: ['常備藥', '急救', '定期檢查'],
     notes: '內含小剪刀、優碘棉片與綜合感冒藥。注意期限',
-    expiresAt: '2026-11-30',
+    expiresAt: '2026-10-15',
     createdAt: Date.now() - 86400000 * 5,
     updatedAt: Date.now() - 86400000 * 1
   },
@@ -275,5 +275,24 @@ export const INITIAL_ITEMS: InventoryItem[] = [
     notes: '線路接觸不良已老舊，不可再通電，集中至資源回收站',
     createdAt: Date.now() - 86400000 * 1,
     updatedAt: Date.now() - 86400000 * 1
+  },
+  {
+    id: 'item-11',
+    name: '常備退燒止痛藥水 (家庭備品)',
+    category: '藥品急救',
+    quantity: 1,
+    unit: '瓶',
+    location: {
+      room: '客廳',
+      furniture: '電視櫃',
+      spot: '上方常備醫藥箱左格'
+    },
+    status: 'organized',
+    frequency: 'rarely',
+    tags: ['常備藥', '注意效期', '即將過期'],
+    notes: '開瓶後需盡快使用，下週即屆保存期限',
+    expiresAt: '2026-09-27',
+    createdAt: Date.now() - 86400000 * 3,
+    updatedAt: Date.now() - 86400000 * 3
   }
 ];

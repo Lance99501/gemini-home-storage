@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { InventoryItem, RoomDefinition, CategoryDefinition, FilterState } from '../types';
 import { CATEGORIES as DEFAULT_CATEGORIES, STATUS_CONFIG } from '../data/defaultData';
+import { getItemExpirationInfo, scanItemsExpiration } from '../utils/expiration';
 import {
   Search,
   Filter,
@@ -13,7 +14,9 @@ import {
   AlertTriangle,
   ArrowUpDown,
   Plus,
-  PackageX
+  PackageX,
+  CalendarX,
+  Calendar
 } from 'lucide-react';
 
 interface ItemListViewProps {
@@ -43,6 +46,9 @@ export const ItemListView: React.FC<ItemListViewProps> = ({
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
 
+  // Expiry scan summary
+  const expirySummary = useMemo(() => scanItemsExpiration(items), [items]);
+
   // Collect all unique tags for tag filter
   const allTags = useMemo(() => {
     const set = new Set<string>();
@@ -53,6 +59,15 @@ export const ItemListView: React.FC<ItemListViewProps> = ({
   // Filtered and sorted items
   const filteredItems = useMemo(() => {
     return items.filter(item => {
+      // Expiration filter
+      if (filterState.expiryFilter === 'expired') {
+        const expInfo = getItemExpirationInfo(item);
+        if (!expInfo.isExpired) return false;
+      } else if (filterState.expiryFilter === 'expiring_soon') {
+        const expInfo = getItemExpirationInfo(item);
+        if (!expInfo.isExpiringSoon) return false;
+      }
+
       // Search query
       if (filterState.searchQuery) {
         const q = filterState.searchQuery.toLowerCase();
@@ -223,7 +238,7 @@ export const ItemListView: React.FC<ItemListViewProps> = ({
             </select>
 
             {/* Reset All Filters Button */}
-            {(filterState.searchQuery || filterState.room || filterState.category || filterState.status || filterState.tag) && (
+            {(filterState.searchQuery || filterState.room || filterState.category || filterState.status || filterState.tag || filterState.expiryFilter) && (
               <button
                 id="reset-filter-btn"
                 onClick={() =>
@@ -232,7 +247,8 @@ export const ItemListView: React.FC<ItemListViewProps> = ({
                     room: '',
                     category: '',
                     status: '',
-                    tag: ''
+                    tag: '',
+                    expiryFilter: undefined
                   })
                 }
                 className="px-3 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
@@ -240,6 +256,79 @@ export const ItemListView: React.FC<ItemListViewProps> = ({
                 重設篩選
               </button>
             )}
+          </div>
+        </div>
+
+        {/* Expiry Filter Quick Tabs */}
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
+          <span className="text-slate-400 text-[11px] shrink-0 flex items-center gap-1">
+            <Calendar className="w-3.5 h-3.5 text-slate-500" />
+            效期篩選：
+          </span>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <button
+              id="filter-expiry-all-btn"
+              onClick={() => onFilterChange({ expiryFilter: undefined })}
+              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                !filterState.expiryFilter || filterState.expiryFilter === 'all'
+                  ? 'bg-slate-800 text-white font-semibold shadow-2xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              全部效期 ({items.length})
+            </button>
+
+            <button
+              id="filter-expiry-expired-btn"
+              onClick={() =>
+                onFilterChange({
+                  expiryFilter: filterState.expiryFilter === 'expired' ? undefined : 'expired'
+                })
+              }
+              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                filterState.expiryFilter === 'expired'
+                  ? 'bg-rose-600 text-white font-bold ring-1 ring-rose-300 shadow-2xs'
+                  : 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'
+              }`}
+            >
+              <AlertTriangle className={`w-3 h-3 ${filterState.expiryFilter === 'expired' ? 'text-white' : 'text-rose-600'}`} />
+              已過期
+              <span
+                className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                  filterState.expiryFilter === 'expired'
+                    ? 'bg-rose-700 text-white'
+                    : 'bg-rose-200 text-rose-800'
+                }`}
+              >
+                {expirySummary.expiredCount}
+              </span>
+            </button>
+
+            <button
+              id="filter-expiry-soon-btn"
+              onClick={() =>
+                onFilterChange({
+                  expiryFilter: filterState.expiryFilter === 'expiring_soon' ? undefined : 'expiring_soon'
+                })
+              }
+              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                filterState.expiryFilter === 'expiring_soon'
+                  ? 'bg-amber-600 text-white font-bold ring-1 ring-amber-300 shadow-2xs'
+                  : 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100'
+              }`}
+            >
+              <Clock className={`w-3 h-3 ${filterState.expiryFilter === 'expiring_soon' ? 'text-white' : 'text-amber-600'}`} />
+              30天內即將到期
+              <span
+                className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                  filterState.expiryFilter === 'expiring_soon'
+                    ? 'bg-amber-700 text-white'
+                    : 'bg-amber-200 text-amber-900'
+                }`}
+              >
+                {expirySummary.expiringSoonCount}
+              </span>
+            </button>
           </div>
         </div>
 
@@ -376,6 +465,7 @@ export const ItemListView: React.FC<ItemListViewProps> = ({
           {filteredItems.map((item) => {
             const isSelected = selectedItemIds.includes(item.id);
             const statusConfig = STATUS_CONFIG[item.status] || STATUS_CONFIG.organized;
+            const expInfo = getItemExpirationInfo(item);
 
             return (
               <div
@@ -384,6 +474,10 @@ export const ItemListView: React.FC<ItemListViewProps> = ({
                 className={`bg-white border rounded-2xl p-4 transition-all hover:shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3 ${
                   isSelected
                     ? 'border-emerald-500 bg-emerald-50/10 ring-1 ring-emerald-400'
+                    : expInfo.isExpired
+                    ? 'border-rose-400 bg-rose-50/30 ring-1 ring-rose-300 shadow-xs'
+                    : expInfo.isExpiringSoon
+                    ? 'border-amber-300 bg-amber-50/20 ring-1 ring-amber-200'
                     : 'border-slate-200/90'
                 }`}
               >
@@ -417,6 +511,27 @@ export const ItemListView: React.FC<ItemListViewProps> = ({
                       >
                         {statusConfig.label}
                       </span>
+
+                      {/* Prominent Expiration Badges */}
+                      {expInfo.isExpired && (
+                        <span
+                          id={`expired-badge-${item.id}`}
+                          className="text-[11px] px-2 py-0.5 rounded-md bg-rose-600 text-white font-bold shrink-0 flex items-center gap-1 shadow-2xs animate-pulse"
+                        >
+                          <AlertTriangle className="w-3 h-3" />
+                          {expInfo.label}
+                        </span>
+                      )}
+
+                      {expInfo.isExpiringSoon && (
+                        <span
+                          id={`expiring-soon-badge-${item.id}`}
+                          className="text-[11px] px-2 py-0.5 rounded-md bg-amber-500 text-white font-bold shrink-0 flex items-center gap-1 shadow-2xs"
+                        >
+                          <Clock className="w-3 h-3" />
+                          {expInfo.label}
+                        </span>
+                      )}
                     </div>
 
                     {/* Precise Location Path */}
@@ -442,16 +557,39 @@ export const ItemListView: React.FC<ItemListViewProps> = ({
                       ))}
 
                       {item.expiresAt && (
-                        <span className="text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3" />
-                          效期: {item.expiresAt}
+                        <span
+                          className={`px-2 py-0.5 rounded-md border flex items-center gap-1 font-semibold ${
+                            expInfo.isExpired
+                              ? 'text-rose-800 bg-rose-100 border-rose-300 font-bold'
+                              : expInfo.isExpiringSoon
+                              ? 'text-amber-800 bg-amber-100 border-amber-300'
+                              : 'text-slate-600 bg-slate-100 border-slate-200'
+                          }`}
+                        >
+                          {expInfo.isExpired ? (
+                            <CalendarX className="w-3 h-3 text-rose-600" />
+                          ) : (
+                            <Clock className="w-3 h-3 text-slate-500" />
+                          )}
+                          保存期限: {item.expiresAt}
+                          {expInfo.isExpired && ` (已過期 ${Math.abs(expInfo.daysLeft || 0)} 天)`}
+                          {expInfo.isExpiringSoon && ` (剩餘 ${expInfo.daysLeft} 天)`}
                         </span>
                       )}
 
                       {item.reviewDate && (
-                        <span className="text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.2 rounded flex items-center gap-1">
+                        <span
+                          className={`px-2 py-0.5 rounded-md border flex items-center gap-1 font-semibold ${
+                            expInfo.type === 'review' && expInfo.isExpired
+                              ? 'text-rose-800 bg-rose-100 border-rose-300 font-bold'
+                              : expInfo.type === 'review' && expInfo.isExpiringSoon
+                              ? 'text-amber-800 bg-amber-100 border-amber-300'
+                              : 'text-indigo-700 bg-indigo-50 border-indigo-200'
+                          }`}
+                        >
                           <Clock className="w-3 h-3" />
                           猶豫檢驗日: {item.reviewDate}
+                          {expInfo.type === 'review' && ` (${expInfo.label})`}
                         </span>
                       )}
 
@@ -466,6 +604,19 @@ export const ItemListView: React.FC<ItemListViewProps> = ({
 
                 {/* Right: Quick Action Buttons */}
                 <div className="flex items-center gap-1.5 self-end md:self-center shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 w-full md:w-auto justify-end">
+                  {/* Quick Discard for Expired Items */}
+                  {expInfo.isExpired && item.status !== 'to_discard' && (
+                    <button
+                      id={`quick-discard-${item.id}`}
+                      onClick={() => onQuickStatusChange(item, 'to_discard')}
+                      className="p-1.5 text-xs text-rose-700 bg-rose-50 border border-rose-300 rounded-lg hover:bg-rose-100 transition-colors flex items-center gap-1 cursor-pointer font-medium"
+                      title="物品已過期，一鍵標記為待丟棄"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                      <span className="hidden sm:inline">標記待丟棄</span>
+                    </button>
+                  )}
+
                   {/* Status Toggle Quick Buttons */}
                   {item.status !== 'organized' && (
                     <button
