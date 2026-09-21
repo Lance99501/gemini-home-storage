@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { InventoryItem, RoomDefinition, CategoryDefinition, FilterState } from '../types';
+import { InventoryItem, RoomDefinition, CategoryDefinition, FilterState, StorageLocation, ItemStatus } from '../types';
 import { CATEGORIES as DEFAULT_CATEGORIES, STATUS_CONFIG } from '../data/defaultData';
 import { getItemExpirationInfo, scanItemsExpiration } from '../utils/expiration';
+import { BatchMoveModal, BatchStatusModal } from './BatchEditModals';
 import {
   Search,
   Filter,
@@ -16,7 +17,12 @@ import {
   Plus,
   PackageX,
   CalendarX,
-  Calendar
+  Calendar,
+  FolderInput,
+  Sparkles,
+  CheckSquare,
+  Square,
+  X
 } from 'lucide-react';
 
 interface ItemListViewProps {
@@ -27,6 +33,16 @@ interface ItemListViewProps {
   onFilterChange: (newFilter: Partial<FilterState>) => void;
   onEditItem: (item: InventoryItem) => void;
   onDeleteItem: (id: string) => void;
+  onBatchUpdateItems?: (
+    itemIds: string[],
+    updates: {
+      location?: StorageLocation;
+      status?: ItemStatus;
+      category?: string;
+      reviewDate?: string;
+    }
+  ) => void;
+  onBatchDeleteItems?: (itemIds: string[]) => void;
   onQuickStatusChange: (item: InventoryItem, newStatus: any) => void;
   onAddNewItem: () => void;
 }
@@ -39,12 +55,18 @@ export const ItemListView: React.FC<ItemListViewProps> = ({
   onFilterChange,
   onEditItem,
   onDeleteItem,
+  onBatchUpdateItems,
+  onBatchDeleteItems,
   onQuickStatusChange,
   onAddNewItem
 }) => {
   const [sortBy, setSortBy] = useState<'updated' | 'name' | 'location' | 'quantity'>('updated');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
+  const [isBatchMode, setIsBatchMode] = useState<boolean>(false);
+  const [isBatchMoveOpen, setIsBatchMoveOpen] = useState<boolean>(false);
+  const [isBatchStatusOpen, setIsBatchStatusOpen] = useState<boolean>(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Expiry scan summary
   const expirySummary = useMemo(() => scanItemsExpiration(items), [items]);
@@ -136,32 +158,103 @@ export const ItemListView: React.FC<ItemListViewProps> = ({
     return c ? c.color : 'bg-slate-50 text-slate-700 border-slate-200';
   };
 
+  const selectedItems = useMemo(
+    () => items.filter((i) => selectedItemIds.includes(i.id)),
+    [items, selectedItemIds]
+  );
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage((prev) => (prev === msg ? null : prev));
+    }, 3500);
+  };
+
   const toggleSelectAll = () => {
     if (selectedItemIds.length === filteredItems.length) {
       setSelectedItemIds([]);
     } else {
-      setSelectedItemIds(filteredItems.map(i => i.id));
+      setSelectedItemIds(filteredItems.map((i) => i.id));
+      setIsBatchMode(true);
     }
   };
 
   const toggleSelectItem = (id: string) => {
-    setSelectedItemIds(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    );
+    setSelectedItemIds((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      if (next.length > 0) setIsBatchMode(true);
+      return next;
+    });
   };
 
   const handleBatchDelete = () => {
-    if (confirm(`確定要刪除選取的 ${selectedItemIds.length} 個項目嗎？`)) {
-      selectedItemIds.forEach(id => onDeleteItem(id));
+    if (selectedItemIds.length === 0) return;
+    if (confirm(`確定要刪除選取的 ${selectedItemIds.length} 個項目嗎？此操作無法復原。`)) {
+      if (onBatchDeleteItems) {
+        onBatchDeleteItems(selectedItemIds);
+      } else {
+        selectedItemIds.forEach((id) => onDeleteItem(id));
+      }
+      showToast(`已成功刪除 ${selectedItemIds.length} 件物品！`);
       setSelectedItemIds([]);
     }
   };
 
   const handleBatchMarkOrganized = () => {
-    selectedItemIds.forEach(id => {
-      const item = items.find(i => i.id === id);
-      if (item) onQuickStatusChange(item, 'organized');
-    });
+    if (selectedItemIds.length === 0) return;
+    if (onBatchUpdateItems) {
+      onBatchUpdateItems(selectedItemIds, { status: 'organized' });
+    } else {
+      selectedItemIds.forEach((id) => {
+        const item = items.find((i) => i.id === id);
+        if (item) onQuickStatusChange(item, 'organized');
+      });
+    }
+    showToast(`已成功將 ${selectedItemIds.length} 件物品標記為「已定位收納」！`);
+    setSelectedItemIds([]);
+  };
+
+  const handleBatchMoveConfirm = (newLoc: StorageLocation, markOrganized: boolean) => {
+    if (selectedItemIds.length === 0) return;
+    if (onBatchUpdateItems) {
+      onBatchUpdateItems(selectedItemIds, {
+        location: newLoc,
+        ...(markOrganized ? { status: 'organized' } : {})
+      });
+    } else {
+      selectedItemIds.forEach((id) => {
+        const item = items.find((i) => i.id === id);
+        if (item) {
+          onEditItem({
+            ...item,
+            location: newLoc,
+            ...(markOrganized ? { status: 'organized' } : {}),
+            updatedAt: Date.now()
+          });
+        }
+      });
+    }
+    showToast(`已成功將 ${selectedItemIds.length} 件物品一鍵移至「${newLoc.room} › ${newLoc.furniture}」！`);
+    setIsBatchMoveOpen(false);
+    setSelectedItemIds([]);
+  };
+
+  const handleBatchStatusConfirm = (newStatus: ItemStatus, reviewDate?: string) => {
+    if (selectedItemIds.length === 0) return;
+    if (onBatchUpdateItems) {
+      onBatchUpdateItems(selectedItemIds, {
+        status: newStatus,
+        reviewDate
+      });
+    } else {
+      selectedItemIds.forEach((id) => {
+        const item = items.find((i) => i.id === id);
+        if (item) onQuickStatusChange(item, newStatus);
+      });
+    }
+    const label = STATUS_CONFIG[newStatus]?.label || newStatus;
+    showToast(`已成功將 ${selectedItemIds.length} 件物品狀態變更為「${label}」！`);
+    setIsBatchStatusOpen(false);
     setSelectedItemIds([]);
   };
 
@@ -361,86 +454,215 @@ export const ItemListView: React.FC<ItemListViewProps> = ({
       </div>
 
       {/* Action Header & Batch Operations */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-1">
-        <div className="flex items-center gap-3">
-          <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer select-none">
-            <input
-              id="select-all-checkbox"
-              type="checkbox"
-              checked={filteredItems.length > 0 && selectedItemIds.length === filteredItems.length}
-              onChange={toggleSelectAll}
-              className="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-            />
-            <span>選取全部 ({selectedItemIds.length}/{filteredItems.length})</span>
-          </label>
+      <div className="space-y-2.5 px-1">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Batch Edit Mode Switch */}
+            <button
+              id="toggle-batch-mode-btn"
+              type="button"
+              onClick={() => {
+                setIsBatchMode((prev) => {
+                  if (prev) setSelectedItemIds([]);
+                  return !prev;
+                });
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border shadow-2xs ${
+                isBatchMode
+                  ? 'bg-emerald-700 text-white border-emerald-700 ring-2 ring-emerald-300'
+                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+              }`}
+            >
+              <CheckSquare className="w-3.5 h-3.5" />
+              <span>{isBatchMode ? '退出批次模式' : '批次編輯模式'}</span>
+              {selectedItemIds.length > 0 && (
+                <span className="px-1.5 py-0.2 bg-white text-emerald-800 rounded-full text-[10px] font-black">
+                  {selectedItemIds.length}
+                </span>
+              )}
+            </button>
 
-          {selectedItemIds.length > 0 && (
-            <div className="flex items-center gap-2 text-xs animate-fadeIn">
+            {/* Select All Checkbox */}
+            <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer select-none bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-xl hover:bg-slate-100 transition-colors">
+              <input
+                id="select-all-checkbox"
+                type="checkbox"
+                checked={filteredItems.length > 0 && selectedItemIds.length === filteredItems.length}
+                onChange={toggleSelectAll}
+                className="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+              />
+              <span className="font-medium">
+                選取全部 ({selectedItemIds.length}/{filteredItems.length})
+              </span>
+            </label>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-slate-500">排序：</span>
+            <button
+              id="sort-updated-btn"
+              onClick={() => toggleSort('updated')}
+              className={`px-2 py-1 rounded-lg border transition-all cursor-pointer flex items-center gap-1 ${
+                sortBy === 'updated'
+                  ? 'bg-slate-900 text-white border-slate-900'
+                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              最近更新
+              {sortBy === 'updated' && (
+                <span className="text-[10px]">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+              )}
+            </button>
+            <button
+              id="sort-location-btn"
+              onClick={() => toggleSort('location')}
+              className={`px-2 py-1 rounded-lg border transition-all cursor-pointer flex items-center gap-1 ${
+                sortBy === 'location'
+                  ? 'bg-slate-900 text-white border-slate-900'
+                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              空間位置
+              {sortBy === 'location' && (
+                <span className="text-[10px]">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+              )}
+            </button>
+            <button
+              id="sort-name-btn"
+              onClick={() => toggleSort('name')}
+              className={`px-2 py-1 rounded-lg border transition-all cursor-pointer flex items-center gap-1 ${
+                sortBy === 'name'
+                  ? 'bg-slate-900 text-white border-slate-900'
+                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              名稱
+              {sortBy === 'name' && (
+                <span className="text-[10px]">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Batch Operations Active Toolbar Banner */}
+        {(isBatchMode || selectedItemIds.length > 0) && (
+          <div
+            id="batch-mode-active-bar"
+            className="bg-emerald-900 text-white p-3 sm:p-4 rounded-2xl shadow-sm border border-emerald-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 animate-fadeIn"
+          >
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded-md bg-emerald-800 text-emerald-100 text-[10px] font-extrabold uppercase tracking-wider border border-emerald-700">
+                  批次編輯模式中
+                </span>
+                <span className="text-xs sm:text-sm font-bold text-white">
+                  已選取 <span className="text-emerald-300 font-black">{selectedItemIds.length}</span> 件物品
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  id="batch-select-all-btn"
+                  type="button"
+                  onClick={toggleSelectAll}
+                  className="text-xs text-emerald-200 hover:text-white underline cursor-pointer font-medium"
+                >
+                  {selectedItemIds.length === filteredItems.length ? '取消全選' : '選取全部篩選項目'}
+                </button>
+                {selectedItemIds.length > 0 && (
+                  <button
+                    id="batch-clear-selection-btn"
+                    type="button"
+                    onClick={() => setSelectedItemIds([])}
+                    className="text-xs text-emerald-300 hover:text-emerald-100 cursor-pointer"
+                  >
+                    清空勾選
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Quick Batch Action Buttons */}
+            <div className="flex items-center gap-2 flex-wrap w-full md:w-auto justify-end">
               <button
-                id="batch-organized-btn"
+                id="batch-action-move-btn"
+                type="button"
+                disabled={selectedItemIds.length === 0}
+                onClick={() => setIsBatchMoveOpen(true)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${
+                  selectedItemIds.length > 0
+                    ? 'bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold'
+                    : 'bg-emerald-950/60 text-emerald-700 cursor-not-allowed border border-emerald-900'
+                }`}
+                title="一鍵將選取的物品移動到同一個空間與家具"
+              >
+                <FolderInput className="w-4 h-4" />
+                <span>一鍵移動空間</span>
+              </button>
+
+              <button
+                id="batch-action-status-btn"
+                type="button"
+                disabled={selectedItemIds.length === 0}
+                onClick={() => setIsBatchStatusOpen(true)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${
+                  selectedItemIds.length > 0
+                    ? 'bg-white text-emerald-950 hover:bg-emerald-50'
+                    : 'bg-emerald-950/60 text-emerald-700 cursor-not-allowed border border-emerald-900'
+                }`}
+                title="一鍵將選取的物品變更為相同整理狀態"
+              >
+                <Sparkles className="w-4 h-4 text-emerald-600" />
+                <span>一鍵變更狀態</span>
+              </button>
+
+              <button
+                id="batch-action-organized-btn"
+                type="button"
+                disabled={selectedItemIds.length === 0}
                 onClick={handleBatchMarkOrganized}
-                className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-300 rounded-lg hover:bg-emerald-100 transition-colors flex items-center gap-1 cursor-pointer"
+                className={`px-2.5 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1 transition-all cursor-pointer ${
+                  selectedItemIds.length > 0
+                    ? 'bg-emerald-800 text-emerald-100 hover:bg-emerald-700 border border-emerald-700'
+                    : 'bg-emerald-950/40 text-emerald-800 cursor-not-allowed'
+                }`}
+                title="直接標記為已妥善定位收納"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                批次標記已收納
+                <span className="hidden sm:inline">標記已定位</span>
               </button>
+
               <button
-                id="batch-delete-btn"
+                id="batch-action-delete-btn"
+                type="button"
+                disabled={selectedItemIds.length === 0}
                 onClick={handleBatchDelete}
-                className="px-2.5 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg hover:bg-rose-100 transition-colors flex items-center gap-1 cursor-pointer"
+                className={`px-2.5 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1 transition-all cursor-pointer ${
+                  selectedItemIds.length > 0
+                    ? 'bg-rose-950/80 text-rose-200 hover:bg-rose-900 border border-rose-800'
+                    : 'bg-emerald-950/40 text-emerald-800 cursor-not-allowed'
+                }`}
+                title="批次刪除選取的物品"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                批次刪除
+                <span>刪除</span>
+              </button>
+
+              <button
+                id="batch-exit-btn"
+                type="button"
+                onClick={() => {
+                  setIsBatchMode(false);
+                  setSelectedItemIds([]);
+                }}
+                className="p-1.5 text-emerald-300 hover:text-white rounded-lg transition-colors cursor-pointer"
+                title="關閉批次模式"
+              >
+                <X className="w-4 h-4" />
               </button>
             </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-slate-500">排序方式：</span>
-          <button
-            id="sort-updated-btn"
-            onClick={() => toggleSort('updated')}
-            className={`px-2 py-1 rounded-lg border transition-all cursor-pointer flex items-center gap-1 ${
-              sortBy === 'updated'
-                ? 'bg-slate-900 text-white border-slate-900'
-                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-            }`}
-          >
-            最近更新
-            {sortBy === 'updated' && (
-              <span className="text-[10px]">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-            )}
-          </button>
-          <button
-            id="sort-location-btn"
-            onClick={() => toggleSort('location')}
-            className={`px-2 py-1 rounded-lg border transition-all cursor-pointer flex items-center gap-1 ${
-              sortBy === 'location'
-                ? 'bg-slate-900 text-white border-slate-900'
-                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-            }`}
-          >
-            空間位置
-            {sortBy === 'location' && (
-              <span className="text-[10px]">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-            )}
-          </button>
-          <button
-            id="sort-name-btn"
-            onClick={() => toggleSort('name')}
-            className={`px-2 py-1 rounded-lg border transition-all cursor-pointer flex items-center gap-1 ${
-              sortBy === 'name'
-                ? 'bg-slate-900 text-white border-slate-900'
-                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-            }`}
-          >
-            名稱
-            {sortBy === 'name' && (
-              <span className="text-[10px]">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-            )}
-          </button>
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Items List */}
@@ -471,9 +693,16 @@ export const ItemListView: React.FC<ItemListViewProps> = ({
               <div
                 key={item.id}
                 id={`inventory-item-card-${item.id}`}
+                onClick={() => {
+                  if (isBatchMode) {
+                    toggleSelectItem(item.id);
+                  }
+                }}
                 className={`bg-white border rounded-2xl p-4 transition-all hover:shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3 ${
                   isSelected
-                    ? 'border-emerald-500 bg-emerald-50/10 ring-1 ring-emerald-400'
+                    ? 'border-emerald-500 bg-emerald-50/25 ring-2 ring-emerald-400 shadow-xs'
+                    : isBatchMode
+                    ? 'border-slate-200 hover:border-emerald-300 hover:bg-slate-50/60 cursor-pointer'
                     : expInfo.isExpired
                     ? 'border-rose-400 bg-rose-50/30 ring-1 ring-rose-300 shadow-xs'
                     : expInfo.isExpiringSoon
@@ -483,13 +712,21 @@ export const ItemListView: React.FC<ItemListViewProps> = ({
               >
                 {/* Left: Checkbox + Name + Details */}
                 <div className="flex items-start gap-3 flex-1 min-w-0">
-                  <input
-                    id={`check-item-${item.id}`}
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={() => toggleSelectItem(item.id)}
-                    className="mt-1 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer shrink-0"
-                  />
+                  <div
+                    className="mt-0.5 p-1 -m-1 cursor-pointer shrink-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleSelectItem(item.id);
+                    }}
+                  >
+                    <input
+                      id={`check-item-${item.id}`}
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => {}}
+                      className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                    />
+                  </div>
 
                   <div className="space-y-1.5 min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
@@ -603,12 +840,18 @@ export const ItemListView: React.FC<ItemListViewProps> = ({
                 </div>
 
                 {/* Right: Quick Action Buttons */}
-                <div className="flex items-center gap-1.5 self-end md:self-center shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 w-full md:w-auto justify-end">
+                <div
+                  className="flex items-center gap-1.5 self-end md:self-center shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 w-full md:w-auto justify-end"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   {/* Quick Discard for Expired Items */}
                   {expInfo.isExpired && item.status !== 'to_discard' && (
                     <button
                       id={`quick-discard-${item.id}`}
-                      onClick={() => onQuickStatusChange(item, 'to_discard')}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onQuickStatusChange(item, 'to_discard');
+                      }}
                       className="p-1.5 text-xs text-rose-700 bg-rose-50 border border-rose-300 rounded-lg hover:bg-rose-100 transition-colors flex items-center gap-1 cursor-pointer font-medium"
                       title="物品已過期，一鍵標記為待丟棄"
                     >
@@ -621,7 +864,10 @@ export const ItemListView: React.FC<ItemListViewProps> = ({
                   {item.status !== 'organized' && (
                     <button
                       id={`mark-done-${item.id}`}
-                      onClick={() => onQuickStatusChange(item, 'organized')}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onQuickStatusChange(item, 'organized');
+                      }}
                       className="p-1.5 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors flex items-center gap-1 cursor-pointer"
                       title="標記為已妥善收納"
                     >
@@ -632,7 +878,10 @@ export const ItemListView: React.FC<ItemListViewProps> = ({
 
                   <button
                     id={`edit-item-${item.id}`}
-                    onClick={() => onEditItem(item)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEditItem(item);
+                    }}
                     className="p-1.5 text-slate-600 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
                     title="編輯物品或更改收納位置"
                   >
@@ -641,7 +890,8 @@ export const ItemListView: React.FC<ItemListViewProps> = ({
 
                   <button
                     id={`delete-item-${item.id}`}
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       if (confirm(`確定要刪除「${item.name}」嗎？`)) {
                         onDeleteItem(item.id);
                       }
@@ -655,6 +905,104 @@ export const ItemListView: React.FC<ItemListViewProps> = ({
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Floating Batch Action Dock at Bottom */}
+      {selectedItemIds.length > 0 && (
+        <div
+          id="floating-batch-dock"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-950/95 backdrop-blur-md text-white px-4 py-2.5 rounded-2xl shadow-2xl border border-slate-800 flex items-center gap-2.5 animate-slideUp max-w-[95vw] overflow-x-auto"
+        >
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="w-6 h-6 rounded-full bg-emerald-400 text-slate-950 font-black text-xs flex items-center justify-center shadow-xs">
+              {selectedItemIds.length}
+            </span>
+            <span className="text-xs font-semibold text-slate-200 hidden sm:inline">
+              件已選取
+            </span>
+          </div>
+
+          <div className="h-4 w-px bg-slate-800 shrink-0" />
+
+          <button
+            id="floating-batch-move-btn"
+            type="button"
+            onClick={() => setIsBatchMoveOpen(true)}
+            className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shrink-0 shadow-xs"
+          >
+            <FolderInput className="w-3.5 h-3.5" />
+            <span>一鍵移動空間</span>
+          </button>
+
+          <button
+            id="floating-batch-status-btn"
+            type="button"
+            onClick={() => setIsBatchStatusOpen(true)}
+            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold border border-slate-700 flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span>一鍵變更狀態</span>
+          </button>
+
+          <button
+            id="floating-batch-organized-btn"
+            type="button"
+            onClick={handleBatchMarkOrganized}
+            className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-semibold border border-slate-700 flex items-center gap-1 transition-all cursor-pointer shrink-0 hidden md:flex"
+            title="標記為已妥善收納"
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>已收納</span>
+          </button>
+
+          <button
+            id="floating-batch-delete-btn"
+            type="button"
+            onClick={handleBatchDelete}
+            className="p-1.5 rounded-xl text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 transition-colors cursor-pointer shrink-0"
+            title="批次刪除選取的物品"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+
+          <button
+            id="floating-batch-clear-btn"
+            type="button"
+            onClick={() => setSelectedItemIds([])}
+            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+            title="清空選取"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Batch Move Modal */}
+      <BatchMoveModal
+        isOpen={isBatchMoveOpen}
+        onClose={() => setIsBatchMoveOpen(false)}
+        selectedItems={selectedItems}
+        rooms={rooms}
+        onConfirmMove={handleBatchMoveConfirm}
+      />
+
+      {/* Batch Status Modal */}
+      <BatchStatusModal
+        isOpen={isBatchStatusOpen}
+        onClose={() => setIsBatchStatusOpen(false)}
+        selectedItems={selectedItems}
+        onConfirmStatus={handleBatchStatusConfirm}
+      />
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div
+          id="batch-operation-toast"
+          className="fixed top-20 right-4 sm:right-8 z-50 bg-slate-950/95 text-white px-4 py-3 rounded-2xl shadow-2xl border border-slate-800 flex items-center gap-2.5 text-xs font-semibold animate-slideDown max-w-sm backdrop-blur-md"
+        >
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{toastMessage}</span>
         </div>
       )}
     </div>

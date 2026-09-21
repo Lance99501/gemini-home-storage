@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { InventoryItem, RoomDefinition, CategoryDefinition, FilterState, ActiveTab, ItemStatus } from './types';
+import { InventoryItem, RoomDefinition, CategoryDefinition, FilterState, ActiveTab, ItemStatus, StorageLocation } from './types';
 import {
   loadStoredItems,
   saveStoredItems,
@@ -102,6 +102,38 @@ export default function App() {
   // Handler: Delete Item
   const handleDeleteItem = (id: string) => {
     setItems(prev => prev.filter(item => item.id !== id));
+  };
+
+  // Handler: Batch Update Items (e.g. move to new location or change status)
+  const handleBatchUpdateItems = (
+    itemIds: string[],
+    updates: {
+      location?: StorageLocation;
+      status?: ItemStatus;
+      category?: string;
+      reviewDate?: string;
+    }
+  ) => {
+    setItems(prev =>
+      prev.map(item => {
+        if (itemIds.includes(item.id)) {
+          return {
+            ...item,
+            ...(updates.location ? { location: { ...item.location, ...updates.location } } : {}),
+            ...(updates.status ? { status: updates.status } : {}),
+            ...(updates.category ? { category: updates.category } : {}),
+            ...(updates.reviewDate !== undefined ? { reviewDate: updates.reviewDate } : {}),
+            updatedAt: Date.now()
+          };
+        }
+        return item;
+      })
+    );
+  };
+
+  // Handler: Batch Delete Items
+  const handleBatchDeleteItems = (itemIds: string[]) => {
+    setItems(prev => prev.filter(item => !itemIds.includes(item.id)));
   };
 
   // Handler: Quick Status Change
@@ -327,6 +359,8 @@ export default function App() {
             onFilterChange={(patch) => setFilterState(prev => ({ ...prev, ...patch }))}
             onEditItem={handleEditItem}
             onDeleteItem={handleDeleteItem}
+            onBatchUpdateItems={handleBatchUpdateItems}
+            onBatchDeleteItems={handleBatchDeleteItems}
             onQuickStatusChange={handleQuickStatusChange}
             onAddNewItem={() => {
               setItemToEdit(null);
