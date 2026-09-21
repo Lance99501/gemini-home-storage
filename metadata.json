@@ -1,0 +1,6 @@
+{
+  "name": "居家物品收納整理清單",
+  "description": "協助從雜亂物品斷捨離整理開始，支援空間區域劃分、分類歸納、物品位置標記與搜尋的居家收納系統。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
