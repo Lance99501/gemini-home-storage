@@ -117,7 +117,7 @@ export const ItemListView: React.FC<ItemListViewProps> = ({
   };
 
   const getCategoryBadgeClass = (categoryName: string) => {
-    const c = CATEGORIES.find(cat => cat.name === categoryName);
+    const c = categories.find((cat: CategoryDefinition) => cat.name === categoryName);
     return c ? c.color : 'bg-slate-50 text-slate-700 border-slate-200';
   };
 

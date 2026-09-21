@@ -76,7 +76,7 @@ export const DeclutterWorkbench: React.FC<DeclutterWorkbenchProps> = ({
     setTargetRoom(item.location.room || rooms[0]?.name || '客廳');
     setTargetFurniture(item.location.furniture || '');
     setTargetSpot(item.location.spot || '');
-    setTargetCategory(item.category || CATEGORIES[0].name);
+    setTargetCategory(item.category || categories[0]?.name || '日常備品');
   };
 
   const saveOrganizedItem = (item: InventoryItem) => {

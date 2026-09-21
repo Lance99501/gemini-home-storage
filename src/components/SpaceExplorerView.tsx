@@ -2,6 +2,13 @@ import React, { useState, useMemo } from 'react';
 import { InventoryItem, RoomDefinition } from '../types';
 import { CATEGORIES } from '../data/defaultData';
 import {
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip
+} from 'recharts';
+import {
   StorageStressGauge,
   calculateStorageStress
 } from './StorageStressIndicator';
@@ -28,7 +35,8 @@ import {
   CheckCircle,
   Sparkles,
   ArrowRight,
-  Filter
+  Filter,
+  PieChart as PieChartIcon
 } from 'lucide-react';
 
 interface SpaceExplorerViewProps {
@@ -85,6 +93,39 @@ export const SpaceExplorerView: React.FC<SpaceExplorerViewProps> = ({
     () => calculateStorageStress(roomItems.length, currentRoomTotalQty, currentRoomClutterCount, 18),
     [roomItems.length, currentRoomTotalQty, currentRoomClutterCount]
   );
+
+  // Room item distribution for the pie chart
+  const ROOM_PIE_COLORS = [
+    '#4f46e5', // indigo-600
+    '#0ea5e9', // sky-500
+    '#10b981', // emerald-500
+    '#f59e0b', // amber-500
+    '#8b5cf6', // purple-500
+    '#f43f5e', // rose-500
+    '#14b8a6', // teal-500
+    '#ec4899', // pink-500
+    '#64748b'  // slate-500
+  ];
+
+  const totalItemsCount = items.length;
+
+  const roomDistributionData = useMemo(() => {
+    return rooms.map((room, index) => {
+      const rItems = items.filter(i => i.location.room === room.name);
+      const totalQty = rItems.reduce((acc, i) => acc + (i.quantity || 1), 0);
+      const percentage = totalItemsCount > 0 ? Math.round((rItems.length / totalItemsCount) * 100) : 0;
+      return {
+        id: room.id,
+        name: room.name,
+        value: rItems.length,
+        totalQuantity: totalQty,
+        percentage,
+        color: ROOM_PIE_COLORS[index % ROOM_PIE_COLORS.length]
+      };
+    });
+  }, [rooms, items, totalItemsCount]);
+
+  const [activePieIndex, setActivePieIndex] = useState<number | null>(null);
 
   // Whole House Storage Stress Overview for all rooms
   const allRoomsStressOverview = useMemo(() => {
@@ -204,55 +245,206 @@ export const SpaceExplorerView: React.FC<SpaceExplorerViewProps> = ({
 
         {/* Multi-Room Stress Visual Strip */}
         {showStressMap && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pt-1">
-            {allRoomsStressOverview.map(({ room, itemCount, totalQuantity, clutterCount, stress }) => {
-              const isSelected = room.id === currentRoom?.id;
-              const isOverloaded = stress.level === 'overloaded' || stress.level === 'warning';
+          <div className="space-y-4 pt-1">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+              {allRoomsStressOverview.map(({ room, itemCount, totalQuantity, clutterCount, stress }) => {
+                const isSelected = room.id === currentRoom?.id;
+                const isOverloaded = stress.level === 'overloaded' || stress.level === 'warning';
 
-              return (
-                <button
-                  key={room.id}
-                  id={`room-stress-card-${room.id}`}
-                  onClick={() => setSelectedRoomId(room.id)}
-                  className={`text-left p-2.5 rounded-xl border transition-all cursor-pointer relative overflow-hidden ${
-                    isSelected
-                      ? 'border-slate-800 ring-2 ring-slate-400 bg-slate-50 shadow-xs'
-                      : isOverloaded
-                      ? `${stress.bgColor} ${stress.borderColor} hover:border-slate-400`
-                      : 'border-slate-200 bg-white hover:border-slate-300'
-                  }`}
-                >
-                  <div className="flex items-center justify-between text-xs mb-1.5">
-                    <span className="font-bold text-slate-800 truncate">{room.name}</span>
-                    <span
-                      className={`text-[10px] font-semibold px-1 py-0.2 rounded border ${stress.bgColor} ${stress.textColor} ${stress.borderColor}`}
-                    >
-                      {stress.badgeLabel}
-                    </span>
+                return (
+                  <button
+                    key={room.id}
+                    id={`room-stress-card-${room.id}`}
+                    onClick={() => setSelectedRoomId(room.id)}
+                    className={`text-left p-2.5 rounded-xl border transition-all cursor-pointer relative overflow-hidden ${
+                      isSelected
+                        ? 'border-slate-800 ring-2 ring-slate-400 bg-slate-50 shadow-xs'
+                        : isOverloaded
+                        ? `${stress.bgColor} ${stress.borderColor} hover:border-slate-400`
+                        : 'border-slate-200 bg-white hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-xs mb-1.5">
+                      <span className="font-bold text-slate-800 truncate">{room.name}</span>
+                      <span
+                        className={`text-[10px] font-semibold px-1 py-0.2 rounded border ${stress.bgColor} ${stress.textColor} ${stress.borderColor}`}
+                      >
+                        {stress.badgeLabel}
+                      </span>
+                    </div>
+
+                    {/* Visual Stress Meter */}
+                    <div className="w-full bg-slate-200/90 rounded-full h-1.5 overflow-hidden mb-1.5">
+                      <div
+                        className={`h-full ${stress.barColor} transition-all duration-500`}
+                        style={{ width: `${stress.fillPercentage}%` }}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between text-[10px] text-slate-500">
+                      <span>{itemCount} 項 ({totalQuantity} 件)</span>
+                      <span className={`font-semibold ${stress.textColor}`}>{stress.fillPercentage}%</span>
+                    </div>
+
+                    {clutterCount > 0 && (
+                      <div className="mt-1 pt-1 border-t border-slate-100 text-[10px] text-rose-600 font-medium flex items-center gap-1 truncate">
+                        <Flame className="w-3 h-3 shrink-0" />
+                        <span>含 {clutterCount} 件待處理雜物</span>
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Room Items Distribution Pie Chart Section */}
+            <div id="room-distribution-pie-chart-card" className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-indigo-100 text-indigo-700 rounded-lg">
+                    <PieChartIcon className="w-3.5 h-3.5" />
                   </div>
-
-                  {/* Visual Stress Meter */}
-                  <div className="w-full bg-slate-200/90 rounded-full h-1.5 overflow-hidden mb-1.5">
-                    <div
-                      className={`h-full ${stress.barColor} transition-all duration-500`}
-                      style={{ width: `${stress.fillPercentage}%` }}
-                    />
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-800">各空間物品分佈比例圓餅圖</h4>
+                    <p className="text-[11px] text-slate-500">
+                      全屋共收納 {totalItemsCount} 項物品，點選圓餅區塊或標籤可直接切換至該空間
+                    </p>
                   </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-[11px] text-slate-500 font-medium">當前檢視：</span>
+                  <span className="text-xs font-bold text-indigo-700 ml-1">
+                    {currentRoom?.name} ({roomItems.length} 項 / {totalItemsCount > 0 ? Math.round((roomItems.length / totalItemsCount) * 100) : 0}%)
+                  </span>
+                </div>
+              </div>
 
-                  <div className="flex items-center justify-between text-[10px] text-slate-500">
-                    <span>{itemCount} 項 ({totalQuantity} 件)</span>
-                    <span className={`font-semibold ${stress.textColor}`}>{stress.fillPercentage}%</span>
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                {/* Recharts Pie Chart Container */}
+                <div className="md:col-span-6 h-52 relative flex items-center justify-center">
+                  {totalItemsCount === 0 ? (
+                    <div className="text-xs text-slate-400 italic">尚未登記任何物品</div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Tooltip
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const data = payload[0].payload;
+                              return (
+                                <div className="bg-slate-900 text-white p-2.5 rounded-lg text-xs shadow-lg border border-slate-800 pointer-events-none">
+                                  <div className="font-bold flex items-center gap-1.5">
+                                    <span
+                                      className="w-2.5 h-2.5 rounded-full inline-block"
+                                      style={{ backgroundColor: data.color }}
+                                    />
+                                    {data.name}
+                                  </div>
+                                  <div className="mt-1 text-slate-300 space-y-0.5 text-[11px]">
+                                    <div>物品種類：<span className="font-semibold text-white">{data.value} 項</span></div>
+                                    <div>總件數：<span className="font-semibold text-white">{data.totalQuantity} 件</span></div>
+                                    <div>佔全屋比例：<span className="font-semibold text-emerald-400">{data.percentage}%</span></div>
+                                  </div>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Pie
+                          data={roomDistributionData}
+                          dataKey="value"
+                          nameKey="name"
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={48}
+                          outerRadius={76}
+                          paddingAngle={3}
+                          cursor="pointer"
+                          onClick={(_entry, index) => {
+                            const item = roomDistributionData[index];
+                            if (item && item.id) {
+                              setSelectedRoomId(item.id);
+                            }
+                          }}
+                          onMouseEnter={(_, index) => setActivePieIndex(index)}
+                          onMouseLeave={() => setActivePieIndex(null)}
+                        >
+                          {roomDistributionData.map((entry, index) => {
+                            const isSelected = entry.id === currentRoom?.id;
+                            const isHovered = activePieIndex === index;
+                            return (
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={entry.color}
+                                stroke={isSelected ? '#1e293b' : '#ffffff'}
+                                strokeWidth={isSelected ? 3 : 1.5}
+                                opacity={isHovered || isSelected ? 1 : 0.85}
+                              />
+                            );
+                          })}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                  )}
 
-                  {clutterCount > 0 && (
-                    <div className="mt-1 pt-1 border-t border-slate-100 text-[10px] text-rose-600 font-medium flex items-center gap-1 truncate">
-                      <Flame className="w-3 h-3 shrink-0" />
-                      <span>含 {clutterCount} 件待處理雜物</span>
+                  {/* Center Donut Label */}
+                  {totalItemsCount > 0 && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                      <span className="text-[10px] text-slate-400 font-medium">全屋物品</span>
+                      <span className="text-base font-extrabold text-slate-800">{totalItemsCount}</span>
+                      <span className="text-[10px] text-slate-500">項</span>
                     </div>
                   )}
-                </button>
-              );
-            })}
+                </div>
+
+                {/* Interactive Legend and Room Quick Switch */}
+                <div className="md:col-span-6 grid grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-1">
+                  {roomDistributionData.map((entry, index) => {
+                    const isSelected = entry.id === currentRoom?.id;
+                    const isHovered = activePieIndex === index;
+
+                    return (
+                      <button
+                        key={entry.id}
+                        id={`pie-legend-${entry.id}`}
+                        onClick={() => setSelectedRoomId(entry.id)}
+                        onMouseEnter={() => setActivePieIndex(index)}
+                        onMouseLeave={() => setActivePieIndex(null)}
+                        className={`p-2 rounded-lg border text-left transition-all cursor-pointer flex items-center justify-between ${
+                          isSelected
+                            ? 'bg-white border-indigo-400 shadow-2xs ring-1 ring-indigo-200'
+                            : isHovered
+                            ? 'bg-white border-slate-300 shadow-2xs'
+                            : 'bg-white/80 border-slate-200 hover:bg-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <span
+                            className="w-2.5 h-2.5 rounded-full shrink-0"
+                            style={{ backgroundColor: entry.color }}
+                          />
+                          <div className="truncate">
+                            <div className="text-xs font-semibold text-slate-800 truncate">{entry.name}</div>
+                            <div className="text-[10px] text-slate-400">{entry.value} 項 ({entry.totalQuantity} 件)</div>
+                          </div>
+                        </div>
+
+                        <span
+                          className={`text-xs font-bold px-1.5 py-0.5 rounded shrink-0 ml-1.5 ${
+                            isSelected
+                              ? 'bg-indigo-50 text-indigo-700'
+                              : 'bg-slate-100 text-slate-600'
+                          }`}
+                        >
+                          {entry.percentage}%
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
