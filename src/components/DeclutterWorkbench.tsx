@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { InventoryItem, RoomDefinition, CategoryDefinition } from '../types';
 import { CATEGORIES as DEFAULT_CATEGORIES } from '../data/defaultData';
 import { DeclutterProgressDashboard } from './DeclutterProgressDashboard';
+import { DeclutterRatioChart } from './DeclutterRatioChart';
 import {
   Sparkles,
   AlertCircle,
@@ -125,6 +126,13 @@ export const DeclutterWorkbench: React.FC<DeclutterWorkbenchProps> = ({
   const currentRoomObj = rooms.find(r => r.name === targetRoom);
   const furnitureOptions = currentRoomObj ? currentRoomObj.defaultFurnitures : [];
 
+  const scrollToPendingClutter = () => {
+    const el = document.getElementById('step-2-triage-workbench');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
     <div id="declutter-workbench" className="space-y-6">
       {/* Introduction & 5-Step Methodology Guide */}
@@ -178,6 +186,12 @@ export const DeclutterWorkbench: React.FC<DeclutterWorkbenchProps> = ({
           </div>
         )}
       </div>
+
+      {/* 斷捨離進度比例圖表：『已分類』vs『待斷捨離』 */}
+      <DeclutterRatioChart
+        items={items}
+        onScrollToPendingClutter={scrollToPendingClutter}
+      />
 
       {/* 斷捨離進度儀表板 */}
       <DeclutterProgressDashboard
@@ -265,7 +279,7 @@ export const DeclutterWorkbench: React.FC<DeclutterWorkbenchProps> = ({
       </div>
 
       {/* Step 2: Triage Workbench - Pending Items */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
+      <div id="step-2-triage-workbench" className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <span className="w-6 h-6 rounded-full bg-amber-500 text-white flex items-center justify-center text-xs font-bold">
