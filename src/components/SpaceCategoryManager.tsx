@@ -333,14 +333,14 @@ export const SpaceCategoryManager: React.FC<SpaceCategoryManagerProps> = ({
         </div>
 
         {/* Sub Navigation */}
-        <div className="flex items-center bg-slate-100 p-1 rounded-xl self-start md:self-auto border border-slate-200">
+        <div className="flex items-center bg-slate-100 p-1 rounded-xl self-stretch sm:self-start md:self-auto border border-slate-200 overflow-x-auto scrollbar-none">
           <button
             id="subtab-spaces-btn"
             onClick={() => {
               setActiveSubTab('spaces');
               cancelCategoryEdit();
             }}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 transition-all cursor-pointer ${
+            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
               activeSubTab === 'spaces'
                 ? 'bg-white text-indigo-700 shadow-2xs'
                 : 'text-slate-600 hover:text-slate-900'
@@ -356,7 +356,7 @@ export const SpaceCategoryManager: React.FC<SpaceCategoryManagerProps> = ({
               setActiveSubTab('categories');
               cancelRoomEdit();
             }}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 transition-all cursor-pointer ${
+            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
               activeSubTab === 'categories'
                 ? 'bg-white text-indigo-700 shadow-2xs'
                 : 'text-slate-600 hover:text-slate-900'
@@ -370,9 +370,9 @@ export const SpaceCategoryManager: React.FC<SpaceCategoryManagerProps> = ({
 
       {/* Toast Notification */}
       {toastMsg && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-xs font-medium px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-2 animate-bounce">
-          <CheckCircle className="w-4 h-4 text-emerald-400" />
-          {toastMsg}
+        <div className="fixed bottom-4 sm:bottom-6 right-3 sm:right-6 left-3 sm:left-auto z-50 bg-slate-900 text-white text-xs font-medium px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-2 max-w-[calc(100vw-1.5rem)] animate-bounce">
+          <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{toastMsg}</span>
         </div>
       )}
 

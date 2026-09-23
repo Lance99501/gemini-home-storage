@@ -102,36 +102,36 @@ export const BatchMoveModal: React.FC<BatchMoveModalProps> = ({
   return (
     <div
       id="batch-move-modal-backdrop"
-      className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn"
+      className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-fadeIn overflow-y-auto"
       onClick={onClose}
     >
       <div
         id="batch-move-modal"
-        className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200"
+        className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden border border-slate-200 my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 bg-slate-50/70 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-emerald-100 text-emerald-700">
+            <div className="p-2 rounded-xl bg-emerald-100 text-emerald-700 shrink-0">
               <FolderInput className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-800">批次移動空間位置</h3>
-              <p className="text-xs text-slate-500">
+              <h3 className="text-sm sm:text-base font-bold text-slate-800">批次移動空間位置</h3>
+              <p className="text-[11px] sm:text-xs text-slate-500">
                 一鍵將選取的 <span className="font-bold text-emerald-600">{selectedItems.length}</span> 件物品移至指定空間
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 flex-1 overflow-y-auto">
           {/* Selected items preview */}
           <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2">
             <div className="flex items-center justify-between text-xs text-slate-600 font-semibold">
@@ -278,11 +278,11 @@ export const BatchMoveModal: React.FC<BatchMoveModalProps> = ({
           )}
 
           {/* Modal Action Buttons */}
-          <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-2.5 pt-3 sm:pt-4 border-t border-slate-100 shrink-0">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer text-center"
             >
               取消
             </button>
@@ -290,7 +290,7 @@ export const BatchMoveModal: React.FC<BatchMoveModalProps> = ({
               id="confirm-batch-move-btn"
               type="submit"
               disabled={!isValid}
-              className={`px-5 py-2 text-xs font-bold rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer ${
+              className={`w-full sm:w-auto px-5 py-2.5 sm:py-2 text-xs font-bold rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer ${
                 isValid
                   ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-200'
                   : 'bg-slate-200 text-slate-400 cursor-not-allowed'
@@ -387,36 +387,36 @@ export const BatchStatusModal: React.FC<BatchStatusModalProps> = ({
   return (
     <div
       id="batch-status-modal-backdrop"
-      className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn"
+      className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-fadeIn overflow-y-auto"
       onClick={onClose}
     >
       <div
         id="batch-status-modal"
-        className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200"
+        className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden border border-slate-200 my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 bg-slate-50/70 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-indigo-100 text-indigo-700">
+            <div className="p-2 rounded-xl bg-indigo-100 text-indigo-700 shrink-0">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-800">批次變更收納狀態</h3>
-              <p className="text-xs text-slate-500">
+              <h3 className="text-sm sm:text-base font-bold text-slate-800">批次變更收納狀態</h3>
+              <p className="text-[11px] sm:text-xs text-slate-500">
                 一鍵將選取的 <span className="font-bold text-indigo-600">{selectedItems.length}</span> 件物品設定為相同狀態
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 flex-1 overflow-y-auto">
           {/* Selected items preview */}
           <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2">
             <div className="flex items-center justify-between text-xs text-slate-600 font-semibold">
@@ -495,18 +495,18 @@ export const BatchStatusModal: React.FC<BatchStatusModalProps> = ({
           )}
 
           {/* Modal Action Buttons */}
-          <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-2.5 pt-3 sm:pt-4 border-t border-slate-100 shrink-0">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer text-center"
             >
               取消
             </button>
             <button
               id="confirm-batch-status-btn"
               type="submit"
-              className="px-5 py-2 text-xs font-bold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+              className="w-full sm:w-auto px-5 py-2.5 sm:py-2 text-xs font-bold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Check className="w-4 h-4" />
               確認變更為「{statusOptions.find(o => o.status === selectedStatus)?.title}」

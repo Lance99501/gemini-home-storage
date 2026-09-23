@@ -912,9 +912,9 @@ export const ItemListView: React.FC<ItemListViewProps> = ({
       {selectedItemIds.length > 0 && (
         <div
           id="floating-batch-dock"
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-950/95 backdrop-blur-md text-white px-4 py-2.5 rounded-2xl shadow-2xl border border-slate-800 flex items-center gap-2.5 animate-slideUp max-w-[95vw] overflow-x-auto"
+          className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-950/95 backdrop-blur-md text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl shadow-2xl border border-slate-800 flex items-center gap-1.5 sm:gap-2.5 animate-slideUp max-w-[calc(100vw-1.5rem)] overflow-x-auto scrollbar-none"
         >
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <span className="w-6 h-6 rounded-full bg-emerald-400 text-slate-950 font-black text-xs flex items-center justify-center shadow-xs">
               {selectedItemIds.length}
             </span>
@@ -929,20 +929,20 @@ export const ItemListView: React.FC<ItemListViewProps> = ({
             id="floating-batch-move-btn"
             type="button"
             onClick={() => setIsBatchMoveOpen(true)}
-            className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shrink-0 shadow-xs"
+            className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shrink-0 shadow-xs"
           >
             <FolderInput className="w-3.5 h-3.5" />
-            <span>一鍵移動空間</span>
+            <span className="whitespace-nowrap">一鍵移動空間</span>
           </button>
 
           <button
             id="floating-batch-status-btn"
             type="button"
             onClick={() => setIsBatchStatusOpen(true)}
-            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold border border-slate-700 flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+            className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold border border-slate-700 flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>一鍵變更狀態</span>
+            <span className="whitespace-nowrap">一鍵變更狀態</span>
           </button>
 
           <button
@@ -999,7 +999,7 @@ export const ItemListView: React.FC<ItemListViewProps> = ({
       {toastMessage && (
         <div
           id="batch-operation-toast"
-          className="fixed top-20 right-4 sm:right-8 z-50 bg-slate-950/95 text-white px-4 py-3 rounded-2xl shadow-2xl border border-slate-800 flex items-center gap-2.5 text-xs font-semibold animate-slideDown max-w-sm backdrop-blur-md"
+          className="fixed top-18 sm:top-20 right-3 sm:right-8 left-3 sm:left-auto z-50 bg-slate-950/95 text-white px-4 py-3 rounded-2xl shadow-2xl border border-slate-800 flex items-center gap-2.5 text-xs font-semibold animate-slideDown max-w-[calc(100vw-1.5rem)] sm:max-w-sm backdrop-blur-md"
         >
           <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
           <span>{toastMessage}</span>

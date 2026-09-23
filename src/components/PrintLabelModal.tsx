@@ -57,34 +57,34 @@ export const PrintLabelModal: React.FC<PrintLabelModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
       <div
         id="print-label-modal-dialog"
-        className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden animate-fadeIn my-auto"
+        className="bg-white rounded-2xl max-w-3xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden animate-fadeIn my-auto"
       >
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50 print:hidden">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 bg-slate-50/50 print:hidden shrink-0">
           <div>
-            <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-              <Printer className="w-5 h-5 text-emerald-600" />
+            <h3 className="text-sm sm:text-base font-bold text-slate-800 flex items-center gap-2">
+              <Printer className="w-4 sm:w-5 h-4 sm:h-5 text-emerald-600" />
               收納盒與抽屜索引標籤列印
             </h3>
-            <p className="text-xs text-slate-500">
+            <p className="text-[11px] sm:text-xs text-slate-500">
               產生實體收納標籤，可直接列印剪下張貼於收納盒、防潮箱或抽屜外側
             </p>
           </div>
           <button
             id="close-print-modal-btn"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Filter Controls (Hidden in print) */}
-        <div className="px-6 py-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs print:hidden">
-          <div className="flex items-center gap-3">
+        <div className="px-4 sm:px-6 py-3 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-xs print:hidden shrink-0">
+          <div className="flex flex-wrap items-center gap-2.5">
             <div className="flex items-center gap-1.5">
               <span className="text-slate-600 font-medium">篩選空間：</span>
               <select
@@ -110,11 +110,11 @@ export const PrintLabelModal: React.FC<PrintLabelModalProps> = ({
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
             <button
               id="copy-label-text-btn"
               onClick={handleCopyText}
-              className="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-colors flex items-center gap-1 cursor-pointer"
+              className="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-colors flex items-center gap-1 cursor-pointer flex-1 sm:flex-initial justify-center"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
               {copied ? '已複製純文字' : '複製文字清單'}
@@ -122,7 +122,7 @@ export const PrintLabelModal: React.FC<PrintLabelModalProps> = ({
             <button
               id="do-print-btn"
               onClick={handlePrint}
-              className="px-4 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-1 font-medium cursor-pointer shadow-2xs"
+              className="px-4 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-1 font-semibold cursor-pointer shadow-2xs flex-1 sm:flex-initial justify-center"
             >
               <Printer className="w-3.5 h-3.5" />
               列印標籤
@@ -131,7 +131,7 @@ export const PrintLabelModal: React.FC<PrintLabelModalProps> = ({
         </div>
 
         {/* Printable Label Cards Canvas */}
-        <div className="flex-1 overflow-y-auto p-6 bg-slate-100/50 print:bg-white print:p-0">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-100/50 print:bg-white print:p-0">
           {Object.keys(groups).length === 0 ? (
             <div className="text-center py-12 text-slate-400 text-xs">
               此篩選條件下沒有已定位的物品
