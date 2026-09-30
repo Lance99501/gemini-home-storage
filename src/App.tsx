@@ -12,7 +12,7 @@ import {
 } from './utils/storage';
 import { Header } from './components/Header';
 import { StatsBar } from './components/StatsBar';
-import { DeclutterWorkbench } from './components/DeclutterWorkbench';
+import { HomeResetView } from './components/HomeResetView';
 import { ItemListView } from './components/ItemListView';
 import { SpaceExplorerView } from './components/SpaceExplorerView';
 import { SpaceCategoryManager } from './components/SpaceCategoryManager';
@@ -182,7 +182,7 @@ export default function App() {
     setIsItemModalOpen(true);
   };
 
-  // Handler: Filter selection from StatsBar
+  // Filter selection from StatsBar
   const handleSelectStatusFromStats = (status: string) => {
     setFilterState(prev => ({ ...prev, status }));
     // If user clicks a stat card, jump to inventory tab so they can see matching items
@@ -330,16 +330,18 @@ export default function App() {
 
       {/* Main Container */}
       <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex-1">
-        {/* High-level Stats Overview Bar */}
-        <StatsBar
-          items={items}
-          selectedStatus={filterState.status}
-          onSelectStatus={handleSelectStatusFromStats}
-        />
+        {/* Inventory status is useful in management views, but intentionally hidden from Home Reset. */}
+        {activeTab !== 'declutter' && (
+          <StatsBar
+            items={items}
+            selectedStatus={filterState.status}
+            onSelectStatus={handleSelectStatusFromStats}
+          />
+        )}
 
         {/* View Switcher based on Active Tab */}
         {activeTab === 'declutter' && (
-          <DeclutterWorkbench
+          <HomeResetView
             items={items}
             rooms={rooms}
             categories={categories}
@@ -347,6 +349,12 @@ export default function App() {
             onBatchAddClutter={handleBatchAddClutter}
             onDeleteItem={handleDeleteItem}
             onSwitchToInventory={() => setActiveTab('inventory')}
+            onSwitchToSpaces={() => setActiveTab('spaces')}
+            onAddImportantItem={() => {
+              setItemToEdit(null);
+              setInitialLocation(undefined);
+              setIsItemModalOpen(true);
+            }}
           />
         )}
 
